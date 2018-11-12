@@ -9,9 +9,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +45,8 @@ public class MenuListActivity extends AppCompatActivity {
         _lvMenu.setAdapter(adapter);
         //リストタップのリスナクラス登録
         _lvMenu.setOnItemClickListener(new ListItemClickListener());
-        //
+
+        //長押しで表示させるビュー 部品登録
         registerForContextMenu(_lvMenu);
 
     }
@@ -95,17 +98,8 @@ public class MenuListActivity extends AppCompatActivity {
         public void onItemClick(AdapterView<?> parent, View view,int position,long id) {
             //タップされがデーターを取得     一行分のデータはMap型 キャストが必要
             Map<String,Object> item =(Map<String, Object>) parent.getItemAtPosition(position);
-            //定食名と金額を取得。Mapの値部分がObject型なのでキャストが必要。
-            String menuName = (String) item.get("name");
-            Integer menuPrice = (Integer) item.get("price");
-            //インテントオブジェクトの生成
-            Intent intent = new Intent(MenuListActivity.this, MenuThanksActivity.class);
-            //第二画面に送るデータを格納
-            intent.putExtra("menuName", menuName);
-            intent.putExtra("menuPrice", menuPrice+"円");
 
-
-            startActivity(intent);
+            order(item);
         }
     }
       //オプションメニュー onCreateMenu() Method実装
@@ -170,7 +164,7 @@ public class MenuListActivity extends AppCompatActivity {
 
     }
 
-    //ContextMenu Method実装
+    //コンテンツメニュー  Method生成
     @Override
    public void onCreateContextMenu(ContextMenu menu,View view ,ContextMenu.ContextMenuInfo menuInfo){
         //親クラスの同盟Methodの呼び出し
@@ -178,11 +172,52 @@ public class MenuListActivity extends AppCompatActivity {
         //メニューインフレーターを取得
         MenuInflater inflater = getMenuInflater();
         //コンテキストメニュー用の.xmlファイルをインフレート
-        inflater.inflate(R.menu.menu_options_menu_list,menu);
+        inflater.inflate(R.menu.menu_context_menu_list,menu);
         //コンテキストメニューのヘッダタイトルを設定
         menu.setHeaderTitle(R.string.menu_list_context_header);
 
     }
+
+    //注文メニュー処理
+    //ListItemClickListenerのonItemClick()メソッド内の処理をPriveteメソッドで切り出し再利用
+    private  void order(Map<String,Object> menu) {
+        //定食名と金額を取得 Mapの部分がオブジェクトなのでキャストが必要
+        String menuName = (String) menu.get("name");
+        Integer menuPrice = (Integer) menu.get("price");
+        //インテントを生成
+        Intent intent = new Intent(MenuListActivity.this, MenuThanksActivity.class);
+        //２画面に送るデーターを格納
+        intent.putExtra("menuName", menuName);
+        intent.putExtra("menuPrice",menuPrice+"円");
+        //第二画面で起動
+        startActivity(intent);
+    }
+    //コンテキストメニューの処理
+    public boolean onContextItemSelected(MenuItem item){
+        //長押しされビューに関する情報が格納されたオブジェクトを取得  どのビューを長押ししたか
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        //長押しされたリストのボジションを取得
+        int listPosition = info.position;//位置を取得するメソッド
+        //ポジションからの長押しされた情報のMapオブジェクトを取得
+        Map<String,Object>menu = _menuList.get(listPosition);
+        //選択されたメニューのIDを取得
+        int itemId = item.getItemId();
+        //IDのR値による処理の分岐
+        switch (itemId){
+            case R.id.menuListContextDesc:
+                 String desc = (String)menu.get("desc");
+
+                Toast.makeText(MenuListActivity.this,desc,Toast.LENGTH_LONG).show();
+                break;
+            case R.id.menuListContextOrder:
+
+                order(menu);
+                break;
+
+        }
+        return super.onContextItemSelected(item);
+    }
+
 
 
 }
